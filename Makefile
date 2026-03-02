@@ -4,7 +4,7 @@ PIP := $(VENV)/bin/pip
 PYTEST := $(VENV)/bin/pytest
 UVICORN := $(VENV)/bin/uvicorn
 
-.PHONY: setup test lint check run
+.PHONY: setup test lint check smoke run
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -18,6 +18,9 @@ lint:
 	$(PYTHON) -m compileall -q backend tests
 
 check: lint test
+
+smoke:
+	$(VENV)/bin/python scripts/smoke.py
 
 run:
 	$(UVICORN) backend.app.main:app --reload

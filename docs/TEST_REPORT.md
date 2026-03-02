@@ -10,3 +10,4 @@
 - 2026-03-02T02:03:57Z: Added Makefile lint/check targets + CI compileall step; local verification via `make check` passed (14/14).
 - 2026-03-02T02:16:00Z: Added endpoint abuse-control regression tests for `/analyze` and `/pr-create` (error response shape + bounds); local run via `.venv/bin/python -m pytest -q` passed (29/29).
 - 2026-03-02T02:28:38Z: Added `/pr-create` API-key protection tests for optional `DRIFTSHIELD_API_KEY` gating via `X-DriftShield-Key` (unset key allows legacy behavior; configured key requires exact match and returns safe 401 on mismatch); local run via `.venv/bin/python -m pytest -q` passed (38/38). [UTC DONE]
+- 2026-03-02T02:35:30Z: Added lightweight smoke flow (`scripts/smoke.py`) to verify local app startup + `GET /health` + sample `POST /analyze`; local run via `.venv/bin/python scripts/smoke.py` passed (`SMOKE_OK`). [UTC DONE]

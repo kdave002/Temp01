@@ -27,3 +27,6 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+      - name: Run smoke test (local app health + analyze)
+        run: python scripts/smoke.py

@@ -41,7 +41,12 @@ cp .env.example .env
 make check
 ```
 
-### 5) Start the API
+### 5) Run smoke test (startup + health + analyze)
+```bash
+make smoke
+```
+
+### 6) Start the API
 ```bash
 make run
 ```
@@ -58,7 +63,7 @@ uvicorn backend.app.main:app --reload
 ```
 
 ## CI
-GitHub Actions runs a lightweight static check (`python -m compileall`) and Python tests automatically on every push using `.github/workflows/python-tests.yml`.
+GitHub Actions runs a lightweight static check (`python -m compileall`), Python tests, and a local smoke check (`python scripts/smoke.py`) automatically on every push using `.github/workflows/python-tests.yml`.
 
 ## Environment
 Set optional repo settings for PR payload preview, and tokenized PR creation:
@@ -79,6 +84,7 @@ export DRIFTSHIELD_API_KEY=change-me  # optional, recommended: protects /pr-crea
 - `POST /pr-preview` → structured GitHub PR payload draft
 - `POST /pr-create` → runs analysis + payload build; creates GitHub PR when token/repo are configured, otherwise returns dry-run payload. If `DRIFTSHIELD_API_KEY` is set, callers must send matching header `X-DriftShield-Key`; if unset, endpoint behavior is unchanged (no API-key gate).
 - `POST /roi-estimate` → estimates monthly/annual engineering time and cost savings from DriftShield adoption based on incident baseline inputs
+- `POST /simulate` → concise preflight simulation report with predicted breakage class, expected repair path, and confidence band (supports optional metric baselines)
 
 ### Request correlation + audit logging
 - Every request supports/returns `X-Request-ID`.
@@ -97,5 +103,19 @@ export DRIFTSHIELD_API_KEY=change-me  # optional, recommended: protects /pr-crea
   "engineers_involved_per_incident": 2,
   "hourly_engineering_cost_usd": 100,
   "driftshield_adoption_rate": 0.75
+}
+```
+
+### Simulation payload example
+```json
+{
+  "previous_schema": [{"name": "customer_id", "type": "string"}],
+  "current_schema": [{"name": "client_id", "type": "string"}],
+  "downstream_model_count": 6,
+  "metric_baselines": {
+    "incidents_per_month": 12,
+    "mean_time_to_detect_hours": 3,
+    "mean_time_to_resolve_hours": 5
+  }
 }
 ```

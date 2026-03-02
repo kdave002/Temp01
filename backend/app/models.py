@@ -62,6 +62,39 @@ class DriftResponse(BaseModel):
     recommendation_reasons: list[str]
 
 
+class SimulationMetricBaselines(BaseModel):
+    incidents_per_month: int | None = Field(default=None, ge=0, le=100_000)
+    mean_time_to_detect_hours: float | None = Field(default=None, ge=0.0, le=24 * 31)
+    mean_time_to_resolve_hours: float | None = Field(default=None, ge=0.0, le=24 * 31)
+
+
+class SimulationRequest(BaseModel):
+    previous_schema: list[Column] = Field(default_factory=list, max_length=500)
+    current_schema: list[Column] = Field(default_factory=list, max_length=500)
+    downstream_model_count: int = Field(default=0, ge=0, le=10_000)
+    metric_baselines: SimulationMetricBaselines | None = None
+
+    @model_validator(mode="after")
+    def validate_unique_column_names(self) -> "SimulationRequest":
+        prev_names = [c.name for c in self.previous_schema]
+        curr_names = [c.name for c in self.current_schema]
+
+        if len(prev_names) != len(set(prev_names)):
+            raise ValueError("previous_schema contains duplicate column names")
+        if len(curr_names) != len(set(curr_names)):
+            raise ValueError("current_schema contains duplicate column names")
+
+        return self
+
+
+class SimulationResponse(BaseModel):
+    predicted_breakage_class: Literal["non_breaking", "potentially_breaking", "likely_breaking"]
+    expected_repair_path: str
+    confidence_band: Literal["low", "medium", "high"]
+    confidence_range: dict[str, float]
+    summary: str
+
+
 class RoiEstimateRequest(BaseModel):
     incidents_per_month: int = Field(ge=0, le=100_000)
     mean_time_to_detect_hours: float = Field(ge=0.0, le=24 * 31)

@@ -12,7 +12,14 @@ from .decision import recommend_action
 from .drift import build_patch, compute_impact, detect_drift
 from .github_client import GitHubPRCreateError, GitHubPRCreateTimeout, create_pull_request
 from .github_payload import build_pr_payload
-from .models import DriftRequest, DriftResponse, RoiEstimateRequest, RoiEstimateResponse
+from .models import (
+    DriftRequest,
+    DriftResponse,
+    RoiEstimateRequest,
+    RoiEstimateResponse,
+    SimulationRequest,
+    SimulationResponse,
+)
 from .remediation import build_pr_body, validate_patch
 
 app = FastAPI(title="DriftShield API", version="0.6.0")
@@ -176,6 +183,75 @@ def _estimate_roi(payload: RoiEstimateRequest) -> RoiEstimateResponse:
     )
 
 
+def _simulate(payload: SimulationRequest) -> SimulationResponse:
+    events = detect_drift(payload.previous_schema, payload.current_schema)
+    impact_score, risk = compute_impact(events, payload.downstream_model_count)
+    validation = validate_patch(events)
+    action, _ = recommend_action(risk, validation, impact_score, events)
+    compatibility = evaluate_contract(payload.previous_schema, payload.current_schema)
+
+    if compatibility.compatible and risk == "low":
+        breakage_class = "non_breaking"
+    elif risk == "high" or not compatibility.compatible:
+        breakage_class = "likely_breaking"
+    else:
+        breakage_class = "potentially_breaking"
+
+    path_map = {
+        "auto_merge_candidate": "auto patch + lightweight review",
+        "open_pr_and_request_review": "open PR + data-owner review",
+        "manual_approval_required": "manual approval + staged rollout",
+    }
+    repair_path = path_map.get(action, "open PR + manual review")
+
+    mean_event_conf = (
+        sum(e.confidence for e in events if e.confidence is not None)
+        / max(1, len([e for e in events if e.confidence is not None]))
+        if any(e.confidence is not None for e in events)
+        else (0.9 if not events else 0.6)
+    )
+
+    baseline_bonus = 0.0
+    if payload.metric_baselines:
+        supplied = [
+            payload.metric_baselines.incidents_per_month,
+            payload.metric_baselines.mean_time_to_detect_hours,
+            payload.metric_baselines.mean_time_to_resolve_hours,
+        ]
+        baseline_bonus = 0.1 * (sum(v is not None for v in supplied) / 3.0)
+
+    confidence = max(
+        0.2,
+        min(
+            0.95,
+            0.45 + (0.35 * mean_event_conf) + (0.05 if compatibility.compatible else -0.05) - (impact_score / 400) + baseline_bonus,
+        ),
+    )
+
+    if confidence >= 0.75:
+        band = "high"
+        band_range = {"min": 0.75, "max": 0.95}
+    elif confidence >= 0.45:
+        band = "medium"
+        band_range = {"min": 0.45, "max": 0.74}
+    else:
+        band = "low"
+        band_range = {"min": 0.2, "max": 0.44}
+
+    summary = (
+        f"{len(events)} drift event(s), impact {impact_score}/100 ({risk}), "
+        f"contract={'compatible' if compatibility.compatible else 'breaking'}"
+    )
+
+    return SimulationResponse(
+        predicted_breakage_class=breakage_class,
+        expected_repair_path=repair_path,
+        confidence_band=band,
+        confidence_range=band_range,
+        summary=summary,
+    )
+
+
 @app.get("/health")
 def health():
     settings = get_settings()
@@ -194,6 +270,11 @@ def analyze(payload: DriftRequest):
 @app.post("/roi-estimate", response_model=RoiEstimateResponse)
 def roi_estimate(payload: RoiEstimateRequest):
     return _estimate_roi(payload)
+
+
+@app.post("/simulate", response_model=SimulationResponse)
+def simulate(payload: SimulationRequest):
+    return _simulate(payload)
 
 
 @app.post("/pr-preview")
