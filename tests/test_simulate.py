@@ -22,6 +22,7 @@ def test_simulate_returns_concise_report_for_breaking_change():
         "open PR + data-owner review",
         "manual approval + staged rollout",
     }
+    assert 0.0 <= body["confidence_score"] <= 1.0
     assert body["confidence_band"] in {"low", "medium", "high"}
     assert body["confidence_range"]["min"] <= body["confidence_range"]["max"]
     assert "impact" in body["summary"]
@@ -44,6 +45,7 @@ def test_simulate_uses_optional_metric_baselines():
     body = res.json()
     assert body["predicted_breakage_class"] == "non_breaking"
     assert body["expected_repair_path"] == "auto patch + lightweight review"
+    assert 0.0 <= body["confidence_score"] <= 1.0
     assert body["confidence_band"] in {"medium", "high"}
 
 

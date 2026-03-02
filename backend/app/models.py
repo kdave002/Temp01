@@ -100,6 +100,7 @@ class SimulationRequest(BaseModel):
 class SimulationResponse(BaseModel):
     predicted_breakage_class: Literal["non_breaking", "potentially_breaking", "likely_breaking"]
     expected_repair_path: str
+    confidence_score: float = Field(ge=0.0, le=1.0)
     confidence_band: Literal["low", "medium", "high"]
     confidence_range: dict[str, float]
     summary: str

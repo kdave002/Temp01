@@ -377,6 +377,7 @@ def _simulate(payload: SimulationRequest) -> SimulationResponse:
     return SimulationResponse(
         predicted_breakage_class=breakage_class,
         expected_repair_path=repair_path,
+        confidence_score=round(confidence, 3),
         confidence_band=band,
         confidence_range=band_range,
         summary=summary,

@@ -17,3 +17,4 @@
 - 2026-03-02T04:39:00Z: Added rate-limit stale-bucket eviction coverage to prevent unbounded in-memory bucket growth with rotating clients; full suite run via `.venv/bin/python -m pytest -q` passed (49/49). [UTC DONE]
 - 2026-03-02T04:54:07Z: Expanded rate-limit coverage tests for additional protected endpoints (`/simulate`, `/roi-estimate`, `/pilot-readiness`) and updated middleware scope; full suite run via `.venv/bin/python -m pytest -q` passed (52/52). [UTC DONE]
 - 2026-03-02T05:23:00Z: Added rate-limit regression assertion for `Retry-After` header on 429 responses; full suite run via `.venv/bin/python -m pytest -q` passed (53/53). [UTC DONE]
+- 2026-03-02T05:44:00Z: Added `/simulate` response contract regression coverage for new `confidence_score` (`0..1`) field; full suite run via `.venv/bin/python -m pytest -q` passed (53/53). [UTC DONE]
