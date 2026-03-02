@@ -76,6 +76,8 @@ export GITHUB_HEAD_BRANCH=driftshield/auto-fix
 export GITHUB_TOKEN=ghp_xxx   # required for live PR creation
 export GITHUB_API_TIMEOUT_SECONDS=10
 export DRIFTSHIELD_API_KEY=change-me  # optional, recommended: protects /pr-create via X-DriftShield-Key
+export RATE_LIMIT_REQUESTS=120         # optional per-client POST limit across protected endpoints (0 disables)
+export RATE_LIMIT_WINDOW_SECONDS=60    # optional window size in seconds
 ```
 
 ## API
@@ -94,6 +96,9 @@ export DRIFTSHIELD_API_KEY=change-me  # optional, recommended: protects /pr-crea
 - Error responses for `POST /analyze`, `POST /pr-preview`, `POST /pr-create`, and `POST /roi-estimate` include top-level `request_id` for tracing.
 - Each request emits an audit log line:
   - `method=<METHOD> path=<PATH> status=<STATUS> request_id=<REQUEST_ID>`
+- Optional in-memory per-client rate limiting is available for `POST /analyze`, `POST /simulate`, `POST /pr-preview`, and `POST /pr-create`.
+  - Configure via `RATE_LIMIT_REQUESTS` and `RATE_LIMIT_WINDOW_SECONDS`.
+  - Limit exceedance returns `429` with safe error detail.
 
 ### ROI estimate payload example
 ```json

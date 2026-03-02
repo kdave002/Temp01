@@ -1,5 +1,7 @@
 import logging
 import secrets
+import time
+from collections import defaultdict, deque
 from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -24,12 +26,47 @@ from .models import (
 )
 from .remediation import build_pr_body, validate_patch
 
-app = FastAPI(title="DriftShield API", version="0.6.0")
+app = FastAPI(title="DriftShield API", version="0.7.0")
 logger = logging.getLogger("driftshield.audit")
+
+_RATE_LIMITED_PATHS = {"/analyze", "/simulate", "/pr-preview", "/pr-create"}
+_rate_limit_buckets: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
 def _request_id_from(request: Request) -> str:
     return getattr(request.state, "request_id", "unknown")
+
+
+def _client_fingerprint(request: Request) -> str:
+    forwarded_for = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+    if forwarded_for:
+        return forwarded_for
+    if request.client and request.client.host:
+        return request.client.host
+    return "unknown"
+
+
+def _enforce_rate_limit(request: Request, settings: Settings) -> None:
+    if request.method != "POST" or request.url.path not in _RATE_LIMITED_PATHS:
+        return
+
+    max_requests = settings.rate_limit_requests
+    window_seconds = settings.rate_limit_window_seconds
+    if max_requests <= 0 or window_seconds <= 0:
+        return
+
+    now = time.monotonic()
+    bucket_key = (request.url.path, _client_fingerprint(request))
+    bucket = _rate_limit_buckets[bucket_key]
+    window_start = now - window_seconds
+
+    while bucket and bucket[0] <= window_start:
+        bucket.popleft()
+
+    if len(bucket) >= max_requests:
+        raise HTTPException(status_code=429, detail="rate limit exceeded")
+
+    bucket.append(now)
 
 
 @app.middleware("http")
@@ -37,13 +74,20 @@ async def request_correlation_and_audit_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid4())
     request.state.request_id = request_id
 
+    settings = get_settings()
+
     status_code = 500
     try:
+        _enforce_rate_limit(request, settings)
         response = await call_next(request)
         status_code = response.status_code
     except HTTPException as exc:
         status_code = exc.status_code
-        raise
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail, "request_id": request_id},
+            headers={"X-Request-ID": request_id},
+        )
     except Exception:
         raise
     else:

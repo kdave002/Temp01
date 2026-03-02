@@ -11,6 +11,8 @@ class Settings(BaseModel):
     github_api_timeout_seconds: int = 10
     auto_merge_low_risk: bool = False
     driftshield_api_key: str = ""
+    rate_limit_requests: int = 120
+    rate_limit_window_seconds: int = 60
 
 
 def get_settings() -> Settings:
@@ -23,4 +25,6 @@ def get_settings() -> Settings:
         github_api_timeout_seconds=int(os.getenv("GITHUB_API_TIMEOUT_SECONDS", "10")),
         auto_merge_low_risk=os.getenv("AUTO_MERGE_LOW_RISK", "false").lower() == "true",
         driftshield_api_key=os.getenv("DRIFTSHIELD_API_KEY", ""),
+        rate_limit_requests=int(os.getenv("RATE_LIMIT_REQUESTS", "120")),
+        rate_limit_window_seconds=int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
     )
