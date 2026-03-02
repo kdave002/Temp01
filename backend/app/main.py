@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from .models import DriftRequest, DriftResponse
-from .drift import detect_drift, build_patch
+from .drift import detect_drift, build_patch, compute_impact
 
-app = FastAPI(title="DriftShield API", version="0.1.0")
+app = FastAPI(title="DriftShield API", version="0.2.0")
 
 
 @app.get("/health")
@@ -13,5 +13,6 @@ def health():
 @app.post("/analyze", response_model=DriftResponse)
 def analyze(payload: DriftRequest):
     events = detect_drift(payload.previous_schema, payload.current_schema)
+    impact_score, risk = compute_impact(events, payload.downstream_model_count)
     patch = build_patch(events)
-    return DriftResponse(events=events, patch_sql=patch)
+    return DriftResponse(events=events, impact_score=impact_score, risk=risk, patch_sql=patch)
