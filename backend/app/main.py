@@ -3,6 +3,7 @@ from .models import DriftRequest, DriftResponse
 from .drift import detect_drift, build_patch, compute_impact
 from .remediation import validate_patch, build_pr_body
 from .decision import recommend_action
+from .contracts import evaluate_contract
 from .config import get_settings
 from .github_payload import build_pr_payload
 
@@ -27,6 +28,10 @@ def analyze(payload: DriftRequest):
     validation = validate_patch(events)
     pr_body = build_pr_body(events, impact_score, risk, patch, validation)
     action, reasons = recommend_action(risk, validation, impact_score, events)
+
+    compatibility = evaluate_contract(payload.previous_schema, payload.current_schema)
+    if not compatibility.compatible:
+        reasons = reasons + ["contract_breaking=" + ",".join(compatibility.breaking_reasons)]
 
     return DriftResponse(
         events=events,

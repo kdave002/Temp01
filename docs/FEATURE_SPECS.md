@@ -24,3 +24,7 @@
 ## F006 Validation Summary + PR Body Composer (Must)
 - Build deterministic remediation validation report and PR markdown payload.
 - Acceptance: includes risk, events, patch SQL, rollback section.
+
+## F007 Data Contract Compatibility Check (Must)
+- Detect contract-breaking changes (removed columns, incompatible type changes).
+- Acceptance: compatibility verdict plus explicit breaking reasons.
