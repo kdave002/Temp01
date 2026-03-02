@@ -3,13 +3,20 @@ from .models import DriftRequest, DriftResponse
 from .drift import detect_drift, build_patch, compute_impact
 from .remediation import validate_patch, build_pr_body
 from .decision import recommend_action
+from .config import get_settings
+from .github_payload import build_pr_payload
 
-app = FastAPI(title="DriftShield API", version="0.4.0")
+app = FastAPI(title="DriftShield API", version="0.5.0")
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "driftshield"}
+    settings = get_settings()
+    return {
+        "status": "ok",
+        "service": "driftshield",
+        "repo_configured": bool(settings.github_owner and settings.github_repo),
+    }
 
 
 @app.post("/analyze", response_model=DriftResponse)
@@ -31,3 +38,10 @@ def analyze(payload: DriftRequest):
         action_recommendation=action,
         recommendation_reasons=reasons,
     )
+
+
+@app.post("/pr-preview")
+def pr_preview(payload: DriftRequest):
+    response = analyze(payload)
+    settings = get_settings()
+    return build_pr_payload(response, settings)

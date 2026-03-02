@@ -24,3 +24,17 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
+
+## Environment
+Set optional repo settings for PR payload preview:
+
+```bash
+export GITHUB_OWNER=kdave002
+export GITHUB_REPO=Temp01
+export GITHUB_BASE_BRANCH=main
+```
+
+## API
+- `GET /health` → service status + repo config signal
+- `POST /analyze` → drift analysis, patch, validation, merge recommendation
+- `POST /pr-preview` → structured GitHub PR payload draft

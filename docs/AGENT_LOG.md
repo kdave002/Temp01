@@ -12,3 +12,5 @@
 [2026-03-02T00:40:55Z] [TESTING_AGENT] Added remediation unit tests for validation + PR payload output. [DONE]
 [2026-03-02T00:57:53Z] [IMPLEMENTATION_AGENT] Added merge decision policy engine (auto-merge/review/manual approval). [DONE]
 [2026-03-02T00:57:53Z] [TESTING_AGENT] Added decision policy tests; suite now 7 passing. [DONE]
+[2026-03-02T01:14:33Z] [IMPLEMENTATION_AGENT] Added GitHub PR payload composer + /pr-preview endpoint with env-based repo config. [DONE]
+[2026-03-02T01:14:33Z] [TESTING_AGENT] Added PR payload unit test; suite now 8 passing. [DONE]
