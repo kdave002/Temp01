@@ -62,3 +62,28 @@ def test_simulate_invalid_payload_has_safe_error_shape():
     assert isinstance(body["errors"], list)
     assert isinstance(body["request_id"], str)
     assert res.headers["X-Request-ID"] == body["request_id"]
+
+
+def test_simulate_rejects_empty_schema_input():
+    res = client.post("/simulate", json={"previous_schema": [], "current_schema": []})
+
+    assert res.status_code == 422
+    body = res.json()
+    assert body["detail"] == "schema input cannot be empty"
+    assert isinstance(body["request_id"], str)
+    assert res.headers["X-Request-ID"] == body["request_id"]
+
+
+def test_simulate_rejects_endpoint_level_downstream_threshold():
+    payload = {
+        "previous_schema": [{"name": "id", "type": "int"}],
+        "current_schema": [{"name": "id", "type": "int"}],
+        "downstream_model_count": 5001,
+    }
+
+    res = client.post("/simulate", json=payload)
+
+    assert res.status_code == 422
+    body = res.json()
+    assert body["detail"] == "downstream_model_count too high for simulation endpoint"
+    assert isinstance(body["request_id"], str)

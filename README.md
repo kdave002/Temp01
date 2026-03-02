@@ -84,7 +84,7 @@ export DRIFTSHIELD_API_KEY=change-me  # optional, recommended: protects /pr-crea
 - `POST /pr-preview` → structured GitHub PR payload draft
 - `POST /pr-create` → runs analysis + payload build; creates GitHub PR when token/repo are configured, otherwise returns dry-run payload. If `DRIFTSHIELD_API_KEY` is set, callers must send matching header `X-DriftShield-Key`; if unset, endpoint behavior is unchanged (no API-key gate).
 - `POST /roi-estimate` → estimates monthly/annual engineering time and cost savings from DriftShield adoption based on incident baseline inputs
-- `POST /simulate` → concise preflight simulation report with predicted breakage class, expected repair path, and confidence band (supports optional metric baselines)
+- `POST /simulate` → concise preflight simulation report with predicted breakage class, expected repair path, and confidence band (supports optional metric baselines; rejects empty schema input and applies stricter endpoint-level anti-abuse caps)
 - `POST /pilot-readiness` → deterministic pilot go/no-go scorecard from operational readiness checks
 
 ### Request correlation + audit logging

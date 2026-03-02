@@ -93,4 +93,23 @@ Implemented minimal API-key protection for the write-like `/pr-create` endpoint.
   - If `DRIFTSHIELD_API_KEY` is **set**, endpoint requires an exact header match.
   - Missing/mismatched key now returns safe `401` (`detail: unauthorized`) without leaking expected values.
 - Key comparison uses constant-time `secrets.compare_digest` to reduce timing side-channel risk.
+
+## 2026-03-02T04:10:00Z Update [UTC DONE]
+
+Extended endpoint-level abuse controls to simulation surfaces.
+
+- Added `/simulate` route guardrails in `backend/app/main.py`:
+  - reject empty combined schema (`422`)
+  - cap combined schema size at 600 columns (`422`)
+  - cap `downstream_model_count` at 5000 (`422`)
+- This keeps simulation traffic aligned with PR-surface anti-abuse posture and avoids high-cost/no-value calls.
+- Existing global exception handlers continue returning safe error envelopes with correlated `request_id` and `X-Request-ID` headers.
+
+Validation coverage added in `tests/test_simulate.py`:
+- `test_simulate_rejects_empty_schema_input`
+- `test_simulate_rejects_endpoint_level_downstream_threshold`
+
+Verification:
+- `.venv/bin/python -m pytest -q` => `46 passed`
+- `make check` => `46 passed`
 - Updated docs (`README.md`, `.env.example`) to warn that leaving the key unset preserves prior behavior and to recommend enabling it in non-local deployments.

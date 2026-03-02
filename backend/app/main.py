@@ -128,6 +128,16 @@ def _require_pr_create_api_key(settings: Settings, provided_key: str | None) -> 
         raise HTTPException(status_code=401, detail="unauthorized")
 
 
+def _validate_simulation_request(payload: SimulationRequest) -> None:
+    total_columns = len(payload.previous_schema) + len(payload.current_schema)
+    if total_columns == 0:
+        raise HTTPException(status_code=422, detail="schema input cannot be empty")
+    if total_columns > 600:
+        raise HTTPException(status_code=422, detail="schema input too large for simulation endpoint")
+    if payload.downstream_model_count > 5000:
+        raise HTTPException(status_code=422, detail="downstream_model_count too high for simulation endpoint")
+
+
 def _round2(value: float) -> float:
     return round(value, 2)
 
@@ -307,6 +317,7 @@ def roi_estimate(payload: RoiEstimateRequest):
 
 @app.post("/simulate", response_model=SimulationResponse)
 def simulate(payload: SimulationRequest):
+    _validate_simulation_request(payload)
     return _simulate(payload)
 
 
