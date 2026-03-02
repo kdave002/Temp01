@@ -26,3 +26,5 @@ class DriftResponse(BaseModel):
     patch_sql: str
     validation: dict
     pr_body: str
+    action_recommendation: str
+    recommendation_reasons: list[str]

@@ -2,8 +2,9 @@ from fastapi import FastAPI
 from .models import DriftRequest, DriftResponse
 from .drift import detect_drift, build_patch, compute_impact
 from .remediation import validate_patch, build_pr_body
+from .decision import recommend_action
 
-app = FastAPI(title="DriftShield API", version="0.3.0")
+app = FastAPI(title="DriftShield API", version="0.4.0")
 
 
 @app.get("/health")
@@ -18,6 +19,8 @@ def analyze(payload: DriftRequest):
     patch = build_patch(events)
     validation = validate_patch(events)
     pr_body = build_pr_body(events, impact_score, risk, patch, validation)
+    action, reasons = recommend_action(risk, validation, impact_score, events)
+
     return DriftResponse(
         events=events,
         impact_score=impact_score,
@@ -25,4 +28,6 @@ def analyze(payload: DriftRequest):
         patch_sql=patch,
         validation=validation,
         pr_body=pr_body,
+        action_recommendation=action,
+        recommendation_reasons=reasons,
     )
