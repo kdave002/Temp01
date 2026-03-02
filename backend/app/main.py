@@ -94,13 +94,25 @@ def _enforce_rate_limit(request: Request, settings: Settings) -> None:
 
     if len(bucket) >= max_requests:
         retry_after_seconds = max(1, int((bucket[0] + window_seconds) - now))
+        request.state.rate_limit_headers = {
+            "X-RateLimit-Limit": str(max_requests),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": str(retry_after_seconds),
+        }
         raise HTTPException(
             status_code=429,
             detail="rate limit exceeded",
-            headers={"Retry-After": str(retry_after_seconds)},
+            headers={"Retry-After": str(retry_after_seconds), **request.state.rate_limit_headers},
         )
 
     bucket.append(now)
+    remaining = max(0, max_requests - len(bucket))
+    reset_seconds = max(1, int((bucket[0] + window_seconds) - now))
+    request.state.rate_limit_headers = {
+        "X-RateLimit-Limit": str(max_requests),
+        "X-RateLimit-Remaining": str(remaining),
+        "X-RateLimit-Reset": str(reset_seconds),
+    }
 
 
 @app.middleware("http")
@@ -129,6 +141,8 @@ async def request_correlation_and_audit_middleware(request: Request, call_next):
         raise
     else:
         response.headers["X-Request-ID"] = request_id
+        for key, value in getattr(request.state, "rate_limit_headers", {}).items():
+            response.headers[key] = value
         return response
     finally:
         logger.info(

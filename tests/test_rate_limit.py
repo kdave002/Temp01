@@ -51,11 +51,22 @@ def test_analyze_rate_limit_enforced(monkeypatch):
     assert second.status_code == 200
     assert third.status_code == 429
 
+    assert first.headers["X-RateLimit-Limit"] == "2"
+    assert first.headers["X-RateLimit-Remaining"] == "1"
+    assert 1 <= int(first.headers["X-RateLimit-Reset"]) <= 60
+
+    assert second.headers["X-RateLimit-Limit"] == "2"
+    assert second.headers["X-RateLimit-Remaining"] == "0"
+    assert 1 <= int(second.headers["X-RateLimit-Reset"]) <= 60
+
     body = third.json()
     assert body["detail"] == "rate limit exceeded"
     assert isinstance(body["request_id"], str)
     retry_after = int(third.headers["Retry-After"])
     assert 1 <= retry_after <= 60
+    assert third.headers["X-RateLimit-Limit"] == "2"
+    assert third.headers["X-RateLimit-Remaining"] == "0"
+    assert 1 <= int(third.headers["X-RateLimit-Reset"]) <= 60
 
 
 @pytest.mark.parametrize(
@@ -87,6 +98,7 @@ def test_get_health_not_rate_limited(monkeypatch):
     for _ in range(3):
         res = client.get("/health")
         assert res.status_code == 200
+        assert "X-RateLimit-Limit" not in res.headers
 
 
 def test_cleanup_rate_limit_buckets_removes_stale_entries():
