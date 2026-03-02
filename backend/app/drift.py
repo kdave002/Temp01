@@ -3,7 +3,25 @@ from .models import Column, DriftEvent
 
 
 def _similarity(a: str, b: str) -> float:
-    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+    a_l = a.lower()
+    b_l = b.lower()
+    raw = SequenceMatcher(None, a_l, b_l).ratio()
+
+    # Lightweight token/synonym boost for common business naming shifts.
+    alias = {
+        "customer": "client",
+        "client": "customer",
+        "amount": "total",
+        "total": "amount",
+    }
+    a_tokens = a_l.split("_")
+    b_tokens = b_l.split("_")
+    overlap = len(set(a_tokens) & set(b_tokens)) / max(1, len(set(a_tokens) | set(b_tokens)))
+
+    boosted_tokens = [alias.get(t, t) for t in a_tokens]
+    alias_overlap = len(set(boosted_tokens) & set(b_tokens)) / max(1, len(set(boosted_tokens) | set(b_tokens)))
+
+    return max(raw, overlap, alias_overlap)
 
 
 def _candidate_renames(removed: set[str], added: set[str], prev: dict[str, str], curr: dict[str, str]) -> list[tuple[str, str, float]]:
@@ -21,7 +39,7 @@ def _candidate_renames(removed: set[str], added: set[str], prev: dict[str, str],
                 best_score = score
                 best_name = new_name
 
-        if best_name and best_score >= 0.72:
+        if best_name and best_score >= 0.62:
             pairs.append((old_name, best_name, round(best_score, 2)))
             used_added.add(best_name)
 
