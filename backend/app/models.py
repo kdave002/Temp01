@@ -114,3 +114,18 @@ class RoiEstimateResponse(BaseModel):
     annual_cost_saved_usd: float = Field(ge=0.0)
     monthly_cost_savings_percent: float = Field(ge=0.0, le=100.0)
     assumptions: dict
+
+
+class PilotReadinessRequest(BaseModel):
+    data_owner_identified: bool
+    repo_access_configured: bool
+    ci_green: bool
+    rollback_plan_defined: bool
+    oncall_contact_set: bool
+
+
+class PilotReadinessResponse(BaseModel):
+    readiness_score: int = Field(ge=0, le=100)
+    status: Literal["not_ready", "ready_with_risks", "ready"]
+    missing_items: list[str]
+    recommendation: str

@@ -28,3 +28,7 @@
 ## F007 Data Contract Compatibility Check (Must)
 - Detect contract-breaking changes (removed columns, incompatible type changes).
 - Acceptance: compatibility verdict plus explicit breaking reasons.
+
+## F008 Pilot Readiness Scorecard (Should)
+- Provide a deterministic pilot go/no-go score based on operational readiness checks.
+- Acceptance: readiness score, status tier, and missing checklist items.

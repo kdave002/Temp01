@@ -15,6 +15,8 @@ from .github_payload import build_pr_payload
 from .models import (
     DriftRequest,
     DriftResponse,
+    PilotReadinessRequest,
+    PilotReadinessResponse,
     RoiEstimateRequest,
     RoiEstimateResponse,
     SimulationRequest,
@@ -183,6 +185,37 @@ def _estimate_roi(payload: RoiEstimateRequest) -> RoiEstimateResponse:
     )
 
 
+def _pilot_readiness(payload: PilotReadinessRequest) -> PilotReadinessResponse:
+    checks = {
+        "data_owner_identified": payload.data_owner_identified,
+        "repo_access_configured": payload.repo_access_configured,
+        "ci_green": payload.ci_green,
+        "rollback_plan_defined": payload.rollback_plan_defined,
+        "oncall_contact_set": payload.oncall_contact_set,
+    }
+
+    passed = [name for name, ok in checks.items() if ok]
+    missing = [name for name, ok in checks.items() if not ok]
+    score = int(round((len(passed) / len(checks)) * 100))
+
+    if score == 100:
+        status = "ready"
+        recommendation = "Pilot can start immediately with standard change windows."
+    elif score >= 60:
+        status = "ready_with_risks"
+        recommendation = "Pilot can start, but close missing readiness items before enabling auto PR create."
+    else:
+        status = "not_ready"
+        recommendation = "Do not start pilot yet; complete core operational readiness items first."
+
+    return PilotReadinessResponse(
+        readiness_score=score,
+        status=status,
+        missing_items=missing,
+        recommendation=recommendation,
+    )
+
+
 def _simulate(payload: SimulationRequest) -> SimulationResponse:
     events = detect_drift(payload.previous_schema, payload.current_schema)
     impact_score, risk = compute_impact(events, payload.downstream_model_count)
@@ -275,6 +308,11 @@ def roi_estimate(payload: RoiEstimateRequest):
 @app.post("/simulate", response_model=SimulationResponse)
 def simulate(payload: SimulationRequest):
     return _simulate(payload)
+
+
+@app.post("/pilot-readiness", response_model=PilotReadinessResponse)
+def pilot_readiness(payload: PilotReadinessRequest):
+    return _pilot_readiness(payload)
 
 
 @app.post("/pr-preview")
