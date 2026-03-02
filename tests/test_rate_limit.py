@@ -54,6 +54,8 @@ def test_analyze_rate_limit_enforced(monkeypatch):
     body = third.json()
     assert body["detail"] == "rate limit exceeded"
     assert isinstance(body["request_id"], str)
+    retry_after = int(third.headers["Retry-After"])
+    assert 1 <= retry_after <= 60
 
 
 @pytest.mark.parametrize(

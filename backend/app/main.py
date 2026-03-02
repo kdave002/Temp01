@@ -93,7 +93,12 @@ def _enforce_rate_limit(request: Request, settings: Settings) -> None:
         bucket = _rate_limit_buckets[bucket_key]
 
     if len(bucket) >= max_requests:
-        raise HTTPException(status_code=429, detail="rate limit exceeded")
+        retry_after_seconds = max(1, int((bucket[0] + window_seconds) - now))
+        raise HTTPException(
+            status_code=429,
+            detail="rate limit exceeded",
+            headers={"Retry-After": str(retry_after_seconds)},
+        )
 
     bucket.append(now)
 
@@ -112,10 +117,13 @@ async def request_correlation_and_audit_middleware(request: Request, call_next):
         status_code = response.status_code
     except HTTPException as exc:
         status_code = exc.status_code
+        response_headers = {"X-Request-ID": request_id}
+        if exc.headers:
+            response_headers.update(exc.headers)
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail, "request_id": request_id},
-            headers={"X-Request-ID": request_id},
+            headers=response_headers,
         )
     except Exception:
         raise
@@ -152,10 +160,13 @@ def http_exception_handler(request: Request, exc: HTTPException):
     detail = exc.detail
     if isinstance(detail, dict):
         detail = {**detail, "request_id": request_id}
+    response_headers = {"X-Request-ID": request_id}
+    if exc.headers:
+        response_headers.update(exc.headers)
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": detail, "request_id": request_id},
-        headers={"X-Request-ID": request_id},
+        headers=response_headers,
     )
 
 
