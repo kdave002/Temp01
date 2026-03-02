@@ -24,3 +24,5 @@ class DriftResponse(BaseModel):
     impact_score: int
     risk: str
     patch_sql: str
+    validation: dict
+    pr_body: str

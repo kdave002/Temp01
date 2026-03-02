@@ -20,3 +20,7 @@
 ## F005 PR Payload Builder (Should)
 - Build structured markdown for GitHub PR body.
 - Acceptance: includes summary, risk, rollback, validation results.
+
+## F006 Validation Summary + PR Body Composer (Must)
+- Build deterministic remediation validation report and PR markdown payload.
+- Acceptance: includes risk, events, patch SQL, rollback section.
