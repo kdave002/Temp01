@@ -1,28 +1,60 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Column(BaseModel):
-    name: str
-    type: str
+    name: str = Field(
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z_][A-Za-z0-9_]*$",
+        description="SQL-safe column identifier (snake_case recommended).",
+    )
+    type: str = Field(
+        min_length=1,
+        max_length=32,
+        pattern=r"^[A-Za-z][A-Za-z0-9_() ,.-]*$",
+        description="Column type descriptor (e.g., int, varchar(255), decimal(10,2)).",
+    )
+
+    @field_validator("name", "type")
+    @classmethod
+    def strip_whitespace(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("value cannot be blank")
+        return cleaned
 
 
 class DriftEvent(BaseModel):
-    kind: str
-    detail: str
-    severity: str = Field(default="low", description="low|medium|high")
-    confidence: float | None = None
+    kind: str = Field(min_length=1, max_length=64, pattern=r"^[a-z_]+$")
+    detail: str = Field(min_length=1, max_length=512)
+    severity: Literal["low", "medium", "high"] = Field(default="low", description="low|medium|high")
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class DriftRequest(BaseModel):
-    previous_schema: list[Column]
-    current_schema: list[Column]
-    downstream_model_count: int = 0
+    previous_schema: list[Column] = Field(default_factory=list, max_length=500)
+    current_schema: list[Column] = Field(default_factory=list, max_length=500)
+    downstream_model_count: int = Field(default=0, ge=0, le=10_000)
+
+    @model_validator(mode="after")
+    def validate_unique_column_names(self) -> "DriftRequest":
+        prev_names = [c.name for c in self.previous_schema]
+        curr_names = [c.name for c in self.current_schema]
+
+        if len(prev_names) != len(set(prev_names)):
+            raise ValueError("previous_schema contains duplicate column names")
+        if len(curr_names) != len(set(curr_names)):
+            raise ValueError("current_schema contains duplicate column names")
+
+        return self
 
 
 class DriftResponse(BaseModel):
     events: list[DriftEvent]
-    impact_score: int
-    risk: str
+    impact_score: int = Field(ge=0, le=100)
+    risk: Literal["low", "medium", "high"]
     patch_sql: str
     validation: dict
     pr_body: str

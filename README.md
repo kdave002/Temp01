@@ -17,13 +17,42 @@ Data contract breaks silently destroy trust in analytics and AI workflows. Drift
 - `docs/` roadmap, specs, research, logs
 - `tests/` core unit tests
 
-## Run (dev)
+## Quickstart
+
+### 1) Clone and enter the repo
 ```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+git clone <your-repo-url>
+cd Temp01
 ```
+
+### 2) Set up a local Python environment
+```bash
+make setup
+```
+
+### 3) Run tests
+```bash
+make test
+```
+
+### 4) Start the API
+```bash
+make run
+```
+
+Service will be available at `http://127.0.0.1:8000`.
+
+## Manual commands (without Makefile)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+pytest -q
+uvicorn backend.app.main:app --reload
+```
+
+## CI
+GitHub Actions runs Python tests automatically on every push using `.github/workflows/python-tests.yml`.
 
 ## Environment
 Set optional repo settings for PR payload preview:
