@@ -14,3 +14,4 @@
 - 2026-03-02T04:10:00Z: Added `/simulate` endpoint abuse-control tests (reject empty schema input, reject endpoint-level downstream threshold), then ran `.venv/bin/python -m pytest -q` and `make check`; result: 46 passed, 0 failed. [UTC DONE]
 - 2026-03-02T04:25:00Z: Added rate-limit tests (`tests/test_rate_limit.py`) covering enforced 429 on `POST /analyze` threshold exceedance and non-limiting behavior for `GET /health`; full suite + checks passed. [UTC DONE]
 - 2026-03-02T04:39:00Z: Added rate-limit stale-bucket eviction coverage to prevent unbounded in-memory bucket growth with rotating clients; full suite run via `.venv/bin/python -m pytest -q` passed (49/49). [UTC DONE]
+- 2026-03-02T04:54:07Z: Expanded rate-limit coverage tests for additional protected endpoints (`/simulate`, `/roi-estimate`, `/pilot-readiness`) and updated middleware scope; full suite run via `.venv/bin/python -m pytest -q` passed (52/52). [UTC DONE]

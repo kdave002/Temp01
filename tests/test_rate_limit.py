@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from backend.app.main import app, _cleanup_rate_limit_buckets, _rate_limit_buckets
 
@@ -11,6 +12,27 @@ def _valid_payload() -> dict:
         "previous_schema": [{"name": "id", "type": "int"}],
         "current_schema": [{"name": "id", "type": "int"}],
         "downstream_model_count": 1,
+    }
+
+
+def _valid_roi_payload() -> dict:
+    return {
+        "incidents_per_month": 10,
+        "mean_time_to_detect_hours": 2,
+        "mean_time_to_resolve_hours": 4,
+        "engineers_involved_per_incident": 2,
+        "hourly_engineering_cost_usd": 100,
+        "driftshield_adoption_rate": 0.75,
+    }
+
+
+def _valid_pilot_payload() -> dict:
+    return {
+        "data_owner_identified": True,
+        "repo_access_configured": True,
+        "ci_green": True,
+        "rollback_plan_defined": True,
+        "oncall_contact_set": True,
     }
 
 
@@ -32,6 +54,27 @@ def test_analyze_rate_limit_enforced(monkeypatch):
     body = third.json()
     assert body["detail"] == "rate limit exceeded"
     assert isinstance(body["request_id"], str)
+
+
+@pytest.mark.parametrize(
+    ("path", "payload"),
+    [
+        ("/simulate", _valid_payload()),
+        ("/roi-estimate", _valid_roi_payload()),
+        ("/pilot-readiness", _valid_pilot_payload()),
+    ],
+)
+def test_additional_protected_post_endpoints_rate_limited(monkeypatch, path, payload):
+    _rate_limit_buckets.clear()
+    monkeypatch.setenv("RATE_LIMIT_REQUESTS", "1")
+    monkeypatch.setenv("RATE_LIMIT_WINDOW_SECONDS", "60")
+
+    first = client.post(path, json=payload)
+    second = client.post(path, json=payload)
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    assert second.json()["detail"] == "rate limit exceeded"
 
 
 def test_get_health_not_rate_limited(monkeypatch):

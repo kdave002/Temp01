@@ -96,7 +96,7 @@ export RATE_LIMIT_WINDOW_SECONDS=60    # optional window size in seconds
 - Error responses for `POST /analyze`, `POST /pr-preview`, `POST /pr-create`, and `POST /roi-estimate` include top-level `request_id` for tracing.
 - Each request emits an audit log line:
   - `method=<METHOD> path=<PATH> status=<STATUS> request_id=<REQUEST_ID>`
-- Optional in-memory per-client rate limiting is available for `POST /analyze`, `POST /simulate`, `POST /pr-preview`, and `POST /pr-create`.
+- Optional in-memory per-client rate limiting is available for `POST /analyze`, `POST /simulate`, `POST /roi-estimate`, `POST /pilot-readiness`, `POST /pr-preview`, and `POST /pr-create`.
   - Configure via `RATE_LIMIT_REQUESTS` and `RATE_LIMIT_WINDOW_SECONDS`.
   - Limit exceedance returns `429` with safe error detail.
 

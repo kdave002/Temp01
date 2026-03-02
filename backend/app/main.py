@@ -29,7 +29,14 @@ from .remediation import build_pr_body, validate_patch
 app = FastAPI(title="DriftShield API", version="0.7.0")
 logger = logging.getLogger("driftshield.audit")
 
-_RATE_LIMITED_PATHS = {"/analyze", "/simulate", "/pr-preview", "/pr-create"}
+_RATE_LIMITED_PATHS = {
+    "/analyze",
+    "/simulate",
+    "/roi-estimate",
+    "/pilot-readiness",
+    "/pr-preview",
+    "/pr-create",
+}
 _RATE_LIMIT_STALE_FACTOR = 3
 _rate_limit_buckets: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
