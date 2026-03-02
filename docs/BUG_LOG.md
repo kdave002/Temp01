@@ -28,3 +28,32 @@
 - **Fix:** Added regex/length constraints and blank-string rejection.
 - **Status:** Fixed
 - **Tests:** `test_rejects_non_identifier_column_name`
+
+### BUG-004: PR endpoints allowed high-cost but low-value requests
+- **Area:** `backend/app/main.py` (`/pr-preview`, `/pr-create`)
+- **Severity:** Medium (abuse/performance)
+- **Symptom:** PR endpoints accepted empty schemas and did not enforce stricter endpoint-level thresholds.
+- **Root Cause:** Only model-level bounds existed; no route-specific policy checks.
+- **Fix:** Added route guardrails for empty schema rejection, combined schema cap (600), and stricter downstream limit (5000).
+- **Status:** Fixed
+- **Tests:** `test_pr_preview_rejects_empty_schema`, `test_pr_preview_rejects_total_schema_size_for_endpoint`, `test_pr_preview_rejects_endpoint_level_downstream_threshold`
+
+### BUG-005: Missing repo config handling on PR surfaces was inconsistent/silent
+- **Area:** `backend/app/main.py` (`/pr-preview`, `/pr-create`)
+- **Severity:** Medium (operational safety)
+- **Symptom:** PR-facing routes did not consistently fail fast with clear, safe errors when repo configuration was missing.
+- **Root Cause:** No explicit configuration gate shared across PR endpoints.
+- **Fix:** Added explicit repo-config gate returning safe `503` detail.
+- **Status:** Fixed
+- **Tests:** `test_pr_preview_requires_repo_configuration`, `test_pr_create_requires_repo_configuration`
+
+### BUG-006: Error details could expose upstream/internal context
+- **Area:** `backend/app/main.py`
+- **Severity:** Low-Medium (information disclosure hygiene)
+- **Symptom:** Validation and GitHub client exceptions could bubble raw detail strings.
+- **Root Cause:** Default/propagated exception text was returned directly.
+- **Fix:** Added safe structured validation handler and generic safe `502/504` error messages for GitHub failures.
+- **Status:** Fixed
+- **Tests:** `test_pr_preview_bad_payload_has_safe_error_shape`, `test_pr_create_returns_504_on_timeout`
+
+Updated: 2026-03-02T02:06:34Z [DONE]

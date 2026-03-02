@@ -22,5 +22,8 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pytest
 
+      - name: Run static lint check (compileall)
+        run: python -m compileall -q backend tests
+
       - name: Run tests
         run: pytest -q

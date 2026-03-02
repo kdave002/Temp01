@@ -43,3 +43,22 @@ Result: `12 passed`.
 - Consider request size limits at API gateway/reverse proxy layer for defense in depth.
 - Consider stricter allow-list for SQL type strings if type catalog is known.
 - Add rate limiting on `/analyze` if exposed publicly.
+
+## 2026-03-02T02:06:34Z Update [DONE]
+
+Additional API misuse-resistance hardening implemented:
+- Added endpoint-level guardrails for PR-facing routes (`/pr-preview`, `/pr-create`):
+  - reject empty combined schema (`422`)
+  - cap combined schema size at 600 columns for PR endpoints (`422`)
+  - cap `downstream_model_count` at 5000 for PR endpoints (`422`)
+- Added explicit PR integration gate for missing repo config on PR endpoints (`503`, safe message).
+- Added safe structured validation error response for malformed payloads (`detail=invalid request payload`, `errors=[]`) to avoid leaking framework internals.
+- Sanitized upstream GitHub failure responses on `/pr-create`:
+  - timeout => `504` with generic safe detail
+  - GitHub API failure => `502` with generic safe detail
+
+Validation coverage added in `tests/test_pr_endpoints.py` for:
+- missing repo config flows on `/pr-preview` and `/pr-create`
+- endpoint-level oversize and threshold rejection on `/pr-preview`
+- malformed payload handling shape on `/pr-preview`
+- `/pr-create` dry-run contract when token is missing

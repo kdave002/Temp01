@@ -4,7 +4,7 @@ PIP := $(VENV)/bin/pip
 PYTEST := $(VENV)/bin/pytest
 UVICORN := $(VENV)/bin/uvicorn
 
-.PHONY: setup test run
+.PHONY: setup test lint check run
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -13,6 +13,11 @@ setup:
 
 test:
 	$(PYTEST) -q
+
+lint:
+	$(PYTHON) -m compileall -q backend tests
+
+check: lint test
 
 run:
 	$(UVICORN) backend.app.main:app --reload

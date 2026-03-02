@@ -30,12 +30,18 @@ cd Temp01
 make setup
 ```
 
-### 3) Run tests
+### 3) Configure environment (recommended)
 ```bash
-make test
+cp .env.example .env
+# then edit values as needed
 ```
 
-### 4) Start the API
+### 4) Run checks (static + tests)
+```bash
+make check
+```
+
+### 5) Start the API
 ```bash
 make run
 ```
@@ -52,18 +58,22 @@ uvicorn backend.app.main:app --reload
 ```
 
 ## CI
-GitHub Actions runs Python tests automatically on every push using `.github/workflows/python-tests.yml`.
+GitHub Actions runs a lightweight static check (`python -m compileall`) and Python tests automatically on every push using `.github/workflows/python-tests.yml`.
 
 ## Environment
-Set optional repo settings for PR payload preview:
+Set optional repo settings for PR payload preview, and tokenized PR creation:
 
 ```bash
 export GITHUB_OWNER=kdave002
 export GITHUB_REPO=Temp01
 export GITHUB_BASE_BRANCH=main
+export GITHUB_HEAD_BRANCH=driftshield/auto-fix
+export GITHUB_TOKEN=ghp_xxx   # required for live PR creation
+export GITHUB_API_TIMEOUT_SECONDS=10
 ```
 
 ## API
 - `GET /health` → service status + repo config signal
 - `POST /analyze` → drift analysis, patch, validation, merge recommendation
 - `POST /pr-preview` → structured GitHub PR payload draft
+- `POST /pr-create` → runs analysis + payload build; creates GitHub PR when token/repo are configured, otherwise returns dry-run payload
