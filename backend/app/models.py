@@ -67,6 +67,16 @@ class SimulationMetricBaselines(BaseModel):
     mean_time_to_detect_hours: float | None = Field(default=None, ge=0.0, le=24 * 31)
     mean_time_to_resolve_hours: float | None = Field(default=None, ge=0.0, le=24 * 31)
 
+    @model_validator(mode="after")
+    def validate_non_empty(self) -> "SimulationMetricBaselines":
+        if (
+            self.incidents_per_month is None
+            and self.mean_time_to_detect_hours is None
+            and self.mean_time_to_resolve_hours is None
+        ):
+            raise ValueError("metric_baselines requires at least one metric")
+        return self
+
 
 class SimulationRequest(BaseModel):
     previous_schema: list[Column] = Field(default_factory=list, max_length=500)

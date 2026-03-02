@@ -5,6 +5,7 @@ from collections import defaultdict, deque
 from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -136,7 +137,11 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     request_id = _request_id_from(request)
     return JSONResponse(
         status_code=422,
-        content={"detail": "invalid request payload", "errors": exc.errors(), "request_id": request_id},
+        content={
+            "detail": "invalid request payload",
+            "errors": jsonable_encoder(exc.errors()),
+            "request_id": request_id,
+        },
         headers={"X-Request-ID": request_id},
     )
 

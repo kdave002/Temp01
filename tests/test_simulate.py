@@ -64,6 +64,24 @@ def test_simulate_invalid_payload_has_safe_error_shape():
     assert res.headers["X-Request-ID"] == body["request_id"]
 
 
+def test_simulate_rejects_empty_metric_baselines_object():
+    payload = {
+        "previous_schema": [{"name": "id", "type": "int"}],
+        "current_schema": [{"name": "id", "type": "int"}],
+        "metric_baselines": {},
+    }
+
+    res = client.post("/simulate", json=payload)
+
+    assert res.status_code == 422
+    body = res.json()
+    assert body["detail"] == "invalid request payload"
+    assert isinstance(body["errors"], list)
+    assert any("metric_baselines requires at least one metric" in str(err) for err in body["errors"])
+    assert isinstance(body["request_id"], str)
+    assert res.headers["X-Request-ID"] == body["request_id"]
+
+
 def test_simulate_rejects_empty_schema_input():
     res = client.post("/simulate", json={"previous_schema": [], "current_schema": []})
 
