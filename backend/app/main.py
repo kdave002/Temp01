@@ -1,4 +1,8 @@
-from fastapi import FastAPI, HTTPException
+import logging
+import secrets
+from uuid import uuid4
+
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -12,13 +16,60 @@ from .models import DriftRequest, DriftResponse, RoiEstimateRequest, RoiEstimate
 from .remediation import build_pr_body, validate_patch
 
 app = FastAPI(title="DriftShield API", version="0.6.0")
+logger = logging.getLogger("driftshield.audit")
+
+
+def _request_id_from(request: Request) -> str:
+    return getattr(request.state, "request_id", "unknown")
+
+
+@app.middleware("http")
+async def request_correlation_and_audit_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    request.state.request_id = request_id
+
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+    except HTTPException as exc:
+        status_code = exc.status_code
+        raise
+    except Exception:
+        raise
+    else:
+        response.headers["X-Request-ID"] = request_id
+        return response
+    finally:
+        logger.info(
+            "method=%s path=%s status=%s request_id=%s",
+            request.method,
+            request.url.path,
+            status_code,
+            request_id,
+        )
 
 
 @app.exception_handler(RequestValidationError)
-def validation_exception_handler(_request, exc: RequestValidationError):
+def validation_exception_handler(request: Request, exc: RequestValidationError):
+    request_id = _request_id_from(request)
     return JSONResponse(
         status_code=422,
-        content={"detail": "invalid request payload", "errors": exc.errors()},
+        content={"detail": "invalid request payload", "errors": exc.errors(), "request_id": request_id},
+        headers={"X-Request-ID": request_id},
+    )
+
+
+@app.exception_handler(HTTPException)
+def http_exception_handler(request: Request, exc: HTTPException):
+    request_id = _request_id_from(request)
+    detail = exc.detail
+    if isinstance(detail, dict):
+        detail = {**detail, "request_id": request_id}
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": detail, "request_id": request_id},
+        headers={"X-Request-ID": request_id},
     )
 
 
@@ -57,6 +108,15 @@ def _validate_pr_endpoint_request(payload: DriftRequest, settings: Settings) -> 
         raise HTTPException(status_code=422, detail="schema input too large for PR endpoints")
     if payload.downstream_model_count > 5000:
         raise HTTPException(status_code=422, detail="downstream_model_count too high for PR endpoints")
+
+
+def _require_pr_create_api_key(settings: Settings, provided_key: str | None) -> None:
+    configured_key = settings.driftshield_api_key
+    if not configured_key:
+        return
+
+    if not provided_key or not secrets.compare_digest(provided_key, configured_key):
+        raise HTTPException(status_code=401, detail="unauthorized")
 
 
 def _round2(value: float) -> float:
@@ -145,9 +205,13 @@ def pr_preview(payload: DriftRequest):
 
 
 @app.post("/pr-create")
-def pr_create(payload: DriftRequest):
+def pr_create(
+    payload: DriftRequest,
+    x_driftshield_key: str | None = Header(default=None, alias="X-DriftShield-Key"),
+):
     settings = get_settings()
     _validate_pr_endpoint_request(payload, settings)
+    _require_pr_create_api_key(settings, x_driftshield_key)
 
     analysis = _run_analysis(payload)
     pr_payload = build_pr_payload(analysis, settings)

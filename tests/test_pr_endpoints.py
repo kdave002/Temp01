@@ -21,7 +21,10 @@ def test_pr_preview_requires_repo_configuration(monkeypatch):
     res = client.post("/pr-preview", json=_valid_payload())
 
     assert res.status_code == 503
-    assert res.json() == {"detail": "PR integration is not configured"}
+    body = res.json()
+    assert body["detail"] == "PR integration is not configured"
+    assert isinstance(body["request_id"], str)
+    assert res.headers["X-Request-ID"] == body["request_id"]
 
 
 def test_pr_preview_rejects_empty_schema(monkeypatch):
@@ -34,7 +37,9 @@ def test_pr_preview_rejects_empty_schema(monkeypatch):
     )
 
     assert res.status_code == 422
-    assert res.json() == {"detail": "schema input cannot be empty"}
+    body = res.json()
+    assert body["detail"] == "schema input cannot be empty"
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_preview_rejects_total_schema_size_for_endpoint(monkeypatch):
@@ -49,7 +54,9 @@ def test_pr_preview_rejects_total_schema_size_for_endpoint(monkeypatch):
     )
 
     assert res.status_code == 422
-    assert res.json() == {"detail": "schema input too large for PR endpoints"}
+    body = res.json()
+    assert body["detail"] == "schema input too large for PR endpoints"
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_preview_rejects_endpoint_level_downstream_threshold(monkeypatch):
@@ -62,7 +69,9 @@ def test_pr_preview_rejects_endpoint_level_downstream_threshold(monkeypatch):
     res = client.post("/pr-preview", json=payload)
 
     assert res.status_code == 422
-    assert res.json() == {"detail": "downstream_model_count too high for PR endpoints"}
+    body = res.json()
+    assert body["detail"] == "downstream_model_count too high for PR endpoints"
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_preview_bad_payload_has_safe_error_shape(monkeypatch):
@@ -82,6 +91,7 @@ def test_pr_preview_bad_payload_has_safe_error_shape(monkeypatch):
     assert res.status_code == 422
     assert body["detail"] == "invalid request payload"
     assert isinstance(body["errors"], list)
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_create_requires_repo_configuration(monkeypatch):
@@ -91,7 +101,9 @@ def test_pr_create_requires_repo_configuration(monkeypatch):
     res = client.post("/pr-create", json=_valid_payload())
 
     assert res.status_code == 503
-    assert res.json() == {"detail": "PR integration is not configured"}
+    body = res.json()
+    assert body["detail"] == "PR integration is not configured"
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_create_returns_dry_run_when_token_missing(monkeypatch):

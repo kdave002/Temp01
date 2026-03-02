@@ -28,6 +28,7 @@ def test_analyze_invalid_payload_has_safe_error_shape():
     assert res.status_code == 422
     assert body["detail"] == "invalid request payload"
     assert isinstance(body["errors"], list)
+    assert isinstance(body["request_id"], str)
 
 
 def test_analyze_enforces_model_level_downstream_upper_bound():
@@ -40,6 +41,7 @@ def test_analyze_enforces_model_level_downstream_upper_bound():
     assert res.status_code == 422
     assert body["detail"] == "invalid request payload"
     assert isinstance(body["errors"], list)
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_create_invalid_payload_has_safe_error_shape(monkeypatch):
@@ -59,6 +61,7 @@ def test_pr_create_invalid_payload_has_safe_error_shape(monkeypatch):
     assert res.status_code == 422
     assert body["detail"] == "invalid request payload"
     assert isinstance(body["errors"], list)
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_create_rejects_total_schema_size_for_endpoint(monkeypatch):
@@ -74,7 +77,9 @@ def test_pr_create_rejects_total_schema_size_for_endpoint(monkeypatch):
     )
 
     assert res.status_code == 422
-    assert res.json() == {"detail": "schema input too large for PR endpoints"}
+    body = res.json()
+    assert body["detail"] == "schema input too large for PR endpoints"
+    assert isinstance(body["request_id"], str)
 
 
 def test_pr_create_rejects_endpoint_level_downstream_threshold(monkeypatch):
@@ -87,4 +92,6 @@ def test_pr_create_rejects_endpoint_level_downstream_threshold(monkeypatch):
     res = client.post("/pr-create", json=payload)
 
     assert res.status_code == 422
-    assert res.json() == {"detail": "downstream_model_count too high for PR endpoints"}
+    body = res.json()
+    assert body["detail"] == "downstream_model_count too high for PR endpoints"
+    assert isinstance(body["request_id"], str)

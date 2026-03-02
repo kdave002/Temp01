@@ -7,3 +7,4 @@
 - 2026-03-02: Added contract compatibility evaluator for breaking change detection in recommendation pipeline.
 - 2026-03-02: Added production-facing GitHub PR creation support (`/pr-create`) with live REST POST (token-based), dry-run fallback, timeout/error handling, and mocked tests for create/dry-run/timeout paths. [DONE @ 2026-03-02T02:04:58Z]
 - 2026-03-02: Added ROI estimation API (`POST /roi-estimate`) with baseline input validation, savings calculation models, endpoint tests, and README docs update. [DONE @ 2026-03-02T02:18:00Z UTC DONE]
+- 2026-03-02: Added request-correlation middleware (`X-Request-ID` propagation/generation), standardized `request_id` in error responses for `/analyze`, `/pr-preview`, `/pr-create`, `/roi-estimate`, and per-request audit log lines (`method,path,status,request_id`); expanded tests and README docs. [DONE @ 2026-03-02T02:29:17Z UTC DONE]

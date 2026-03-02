@@ -82,3 +82,15 @@ Regression tests added in `tests/test_endpoint_abuse_controls.py`:
 - `/pr-create`: malformed payload error-shape contract
 - `/pr-create`: endpoint-level combined-schema cap rejection
 - `/pr-create`: endpoint-level downstream threshold rejection
+
+## 2026-03-02T02:28:38Z Update [UTC DONE]
+
+Implemented minimal API-key protection for the write-like `/pr-create` endpoint.
+
+- Added optional environment key `DRIFTSHIELD_API_KEY` to runtime settings.
+- Added request header gate on `/pr-create` using `X-DriftShield-Key`:
+  - If `DRIFTSHIELD_API_KEY` is **unset**, endpoint behavior is unchanged (backward-compatible).
+  - If `DRIFTSHIELD_API_KEY` is **set**, endpoint requires an exact header match.
+  - Missing/mismatched key now returns safe `401` (`detail: unauthorized`) without leaking expected values.
+- Key comparison uses constant-time `secrets.compare_digest` to reduce timing side-channel risk.
+- Updated docs (`README.md`, `.env.example`) to warn that leaving the key unset preserves prior behavior and to recommend enabling it in non-local deployments.

@@ -70,14 +70,23 @@ export GITHUB_BASE_BRANCH=main
 export GITHUB_HEAD_BRANCH=driftshield/auto-fix
 export GITHUB_TOKEN=ghp_xxx   # required for live PR creation
 export GITHUB_API_TIMEOUT_SECONDS=10
+export DRIFTSHIELD_API_KEY=change-me  # optional, recommended: protects /pr-create via X-DriftShield-Key
 ```
 
 ## API
 - `GET /health` → service status + repo config signal
 - `POST /analyze` → drift analysis, patch, validation, merge recommendation
 - `POST /pr-preview` → structured GitHub PR payload draft
-- `POST /pr-create` → runs analysis + payload build; creates GitHub PR when token/repo are configured, otherwise returns dry-run payload
+- `POST /pr-create` → runs analysis + payload build; creates GitHub PR when token/repo are configured, otherwise returns dry-run payload. If `DRIFTSHIELD_API_KEY` is set, callers must send matching header `X-DriftShield-Key`; if unset, endpoint behavior is unchanged (no API-key gate).
 - `POST /roi-estimate` → estimates monthly/annual engineering time and cost savings from DriftShield adoption based on incident baseline inputs
+
+### Request correlation + audit logging
+- Every request supports/returns `X-Request-ID`.
+  - If caller sends `X-Request-ID`, it is propagated in the response.
+  - If omitted, DriftShield generates one and returns it.
+- Error responses for `POST /analyze`, `POST /pr-preview`, `POST /pr-create`, and `POST /roi-estimate` include top-level `request_id` for tracing.
+- Each request emits an audit log line:
+  - `method=<METHOD> path=<PATH> status=<STATUS> request_id=<REQUEST_ID>`
 
 ### ROI estimate payload example
 ```json

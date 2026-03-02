@@ -66,3 +66,5 @@ def test_roi_estimate_invalid_payload_has_safe_error_shape():
     assert res.status_code == 422
     assert body["detail"] == "invalid request payload"
     assert isinstance(body["errors"], list)
+    assert isinstance(body["request_id"], str)
+    assert res.headers["X-Request-ID"] == body["request_id"]

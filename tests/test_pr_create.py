@@ -68,4 +68,49 @@ def test_pr_create_returns_504_on_timeout(monkeypatch):
         response = client.post("/pr-create", json=_sample_request())
 
     assert response.status_code == 504
-    assert "timed out" in response.json()["detail"].lower()
+    body = response.json()
+    assert "timed out" in body["detail"].lower()
+    assert isinstance(body["request_id"], str)
+    assert response.headers["X-Request-ID"] == body["request_id"]
+
+
+def test_pr_create_allows_request_when_api_key_not_configured(monkeypatch):
+    monkeypatch.delenv("DRIFTSHIELD_API_KEY", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("GITHUB_OWNER", "octocat")
+    monkeypatch.setenv("GITHUB_REPO", "hello-world")
+
+    response = client.post("/pr-create", json=_sample_request())
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "dry_run"
+
+
+def test_pr_create_requires_api_key_when_configured(monkeypatch):
+    monkeypatch.setenv("DRIFTSHIELD_API_KEY", "super-secret")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("GITHUB_OWNER", "octocat")
+    monkeypatch.setenv("GITHUB_REPO", "hello-world")
+
+    response = client.post("/pr-create", json=_sample_request())
+
+    assert response.status_code == 401
+    body = response.json()
+    assert body["detail"] == "unauthorized"
+    assert isinstance(body["request_id"], str)
+
+
+def test_pr_create_accepts_exact_matching_api_key(monkeypatch):
+    monkeypatch.setenv("DRIFTSHIELD_API_KEY", "super-secret")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("GITHUB_OWNER", "octocat")
+    monkeypatch.setenv("GITHUB_REPO", "hello-world")
+
+    response = client.post(
+        "/pr-create",
+        json=_sample_request(),
+        headers={"X-DriftShield-Key": "super-secret"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "dry_run"
