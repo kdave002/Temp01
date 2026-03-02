@@ -8,7 +8,7 @@ from .decision import recommend_action
 from .drift import build_patch, compute_impact, detect_drift
 from .github_client import GitHubPRCreateError, GitHubPRCreateTimeout, create_pull_request
 from .github_payload import build_pr_payload
-from .models import DriftRequest, DriftResponse
+from .models import DriftRequest, DriftResponse, RoiEstimateRequest, RoiEstimateResponse
 from .remediation import build_pr_body, validate_patch
 
 app = FastAPI(title="DriftShield API", version="0.6.0")
@@ -59,6 +59,63 @@ def _validate_pr_endpoint_request(payload: DriftRequest, settings: Settings) -> 
         raise HTTPException(status_code=422, detail="downstream_model_count too high for PR endpoints")
 
 
+def _round2(value: float) -> float:
+    return round(value, 2)
+
+
+def _estimate_roi(payload: RoiEstimateRequest) -> RoiEstimateResponse:
+    adoption = payload.driftshield_adoption_rate
+
+    incident_reduction_rate = 0.20 * adoption
+    mttd_reduction_rate = 0.35 * adoption
+    mttr_reduction_rate = 0.40 * adoption
+
+    baseline_hours_per_incident = payload.mean_time_to_detect_hours + payload.mean_time_to_resolve_hours
+    baseline_monthly_engineering_hours = (
+        payload.incidents_per_month
+        * baseline_hours_per_incident
+        * payload.engineers_involved_per_incident
+    )
+
+    projected_incidents_per_month = payload.incidents_per_month * (1 - incident_reduction_rate)
+    projected_mttd_hours = payload.mean_time_to_detect_hours * (1 - mttd_reduction_rate)
+    projected_mttr_hours = payload.mean_time_to_resolve_hours * (1 - mttr_reduction_rate)
+
+    projected_hours_per_incident = projected_mttd_hours + projected_mttr_hours
+    projected_monthly_engineering_hours = (
+        projected_incidents_per_month
+        * projected_hours_per_incident
+        * payload.engineers_involved_per_incident
+    )
+
+    baseline_monthly_cost_usd = baseline_monthly_engineering_hours * payload.hourly_engineering_cost_usd
+    projected_monthly_cost_usd = projected_monthly_engineering_hours * payload.hourly_engineering_cost_usd
+
+    monthly_engineering_hours_saved = max(0.0, baseline_monthly_engineering_hours - projected_monthly_engineering_hours)
+    monthly_cost_saved_usd = max(0.0, baseline_monthly_cost_usd - projected_monthly_cost_usd)
+
+    monthly_cost_savings_percent = (
+        (monthly_cost_saved_usd / baseline_monthly_cost_usd) * 100.0 if baseline_monthly_cost_usd > 0 else 0.0
+    )
+
+    return RoiEstimateResponse(
+        baseline_monthly_engineering_hours=_round2(baseline_monthly_engineering_hours),
+        baseline_monthly_cost_usd=_round2(baseline_monthly_cost_usd),
+        projected_monthly_engineering_hours=_round2(projected_monthly_engineering_hours),
+        projected_monthly_cost_usd=_round2(projected_monthly_cost_usd),
+        monthly_engineering_hours_saved=_round2(monthly_engineering_hours_saved),
+        monthly_cost_saved_usd=_round2(monthly_cost_saved_usd),
+        annual_cost_saved_usd=_round2(monthly_cost_saved_usd * 12),
+        monthly_cost_savings_percent=_round2(monthly_cost_savings_percent),
+        assumptions={
+            "adoption_rate": adoption,
+            "incident_reduction_rate": incident_reduction_rate,
+            "mttd_reduction_rate": mttd_reduction_rate,
+            "mttr_reduction_rate": mttr_reduction_rate,
+        },
+    )
+
+
 @app.get("/health")
 def health():
     settings = get_settings()
@@ -72,6 +129,11 @@ def health():
 @app.post("/analyze", response_model=DriftResponse)
 def analyze(payload: DriftRequest):
     return _run_analysis(payload)
+
+
+@app.post("/roi-estimate", response_model=RoiEstimateResponse)
+def roi_estimate(payload: RoiEstimateRequest):
+    return _estimate_roi(payload)
 
 
 @app.post("/pr-preview")

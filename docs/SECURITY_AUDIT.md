@@ -62,3 +62,23 @@ Validation coverage added in `tests/test_pr_endpoints.py` for:
 - endpoint-level oversize and threshold rejection on `/pr-preview`
 - malformed payload handling shape on `/pr-preview`
 - `/pr-create` dry-run contract when token is missing
+
+## 2026-03-02T02:16:00Z Update [DONE]
+
+Abuse-control consistency review completed across `/analyze`, `/pr-preview`, and `/pr-create`.
+
+Findings:
+- All three endpoints now consistently return the custom safe validation envelope for malformed payloads:
+  - `422`
+  - `{"detail": "invalid request payload", "errors": [...]}`
+- `/analyze` enforces model-level bounds (`previous_schema/current_schema <= 500` each, `downstream_model_count <= 10000`).
+- `/pr-preview` and `/pr-create` apply stricter endpoint-level anti-abuse bounds on top of model limits:
+  - combined schema size cap: `<= 600`
+  - `downstream_model_count <= 5000`
+
+Regression tests added in `tests/test_endpoint_abuse_controls.py`:
+- `/analyze`: malformed payload error-shape contract
+- `/analyze`: model bound rejection (`downstream_model_count=10001`) with safe error envelope
+- `/pr-create`: malformed payload error-shape contract
+- `/pr-create`: endpoint-level combined-schema cap rejection
+- `/pr-create`: endpoint-level downstream threshold rejection

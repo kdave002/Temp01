@@ -77,3 +77,16 @@ export GITHUB_API_TIMEOUT_SECONDS=10
 - `POST /analyze` → drift analysis, patch, validation, merge recommendation
 - `POST /pr-preview` → structured GitHub PR payload draft
 - `POST /pr-create` → runs analysis + payload build; creates GitHub PR when token/repo are configured, otherwise returns dry-run payload
+- `POST /roi-estimate` → estimates monthly/annual engineering time and cost savings from DriftShield adoption based on incident baseline inputs
+
+### ROI estimate payload example
+```json
+{
+  "incidents_per_month": 10,
+  "mean_time_to_detect_hours": 2,
+  "mean_time_to_resolve_hours": 4,
+  "engineers_involved_per_incident": 2,
+  "hourly_engineering_cost_usd": 100,
+  "driftshield_adoption_rate": 0.75
+}
+```

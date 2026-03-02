@@ -21,3 +21,6 @@
 [2026-03-02T02:06:34Z] [SECURITY_AGENT+BUG_FIXER_AGENT] Audited PR API surfaces, added endpoint-level guardrails and safe error responses, expanded `/pr-preview` + `/pr-create` abuse/misconfig tests, updated security/bug docs, and verified suite (24 passed). [DONE]
 [2026-03-02T02:04:58Z] [IMPLEMENTATION_AGENT] Implemented GitHub PR creation module + `/pr-create` endpoint with dry-run fallback, timeout/HTTP error handling, README updates, and mocked endpoint tests. [DONE]
 [2026-03-02T02:03:57Z] [DEVOPS_AGENT+TESTING_AGENT] Added .env.example, Makefile lint/check targets, CI compileall+tests flow, and README quickstart refresh; verified with local `make check`. [DONE]
+[2026-03-02T02:18:00Z] [IMPLEMENTATION_AGENT] Added `POST /roi-estimate` ROI savings endpoint with validated request/response models, calculation engine, automated endpoint tests, and README API docs update. [UTC DONE]
+[2026-03-02T02:17:47Z] [SECURITY_AGENT+TESTING_AGENT] Reviewed endpoint abuse controls for consistency across `/analyze`, `/pr-preview`, `/pr-create`; added regression tests for safe 422 error envelope and endpoint/model bounds; updated SECURITY_AUDIT and TEST_REPORT; verified full suite (29 passed). [DONE]
+[2026-03-02 02:17:33 UTC] DONE: Created docs/ICP_AND_PILOT_PLAN.md (ICP segmentation, 25 archetypes, pilot terms, ROI assumptions, objection handling).

@@ -60,3 +60,24 @@ class DriftResponse(BaseModel):
     pr_body: str
     action_recommendation: str
     recommendation_reasons: list[str]
+
+
+class RoiEstimateRequest(BaseModel):
+    incidents_per_month: int = Field(ge=0, le=100_000)
+    mean_time_to_detect_hours: float = Field(ge=0.0, le=24 * 31)
+    mean_time_to_resolve_hours: float = Field(ge=0.0, le=24 * 31)
+    engineers_involved_per_incident: float = Field(gt=0.0, le=500.0)
+    hourly_engineering_cost_usd: float = Field(gt=0.0, le=10_000.0)
+    driftshield_adoption_rate: float = Field(default=1.0, ge=0.0, le=1.0)
+
+
+class RoiEstimateResponse(BaseModel):
+    baseline_monthly_engineering_hours: float = Field(ge=0.0)
+    baseline_monthly_cost_usd: float = Field(ge=0.0)
+    projected_monthly_engineering_hours: float = Field(ge=0.0)
+    projected_monthly_cost_usd: float = Field(ge=0.0)
+    monthly_engineering_hours_saved: float = Field(ge=0.0)
+    monthly_cost_saved_usd: float = Field(ge=0.0)
+    annual_cost_saved_usd: float = Field(ge=0.0)
+    monthly_cost_savings_percent: float = Field(ge=0.0, le=100.0)
+    assumptions: dict
