@@ -259,6 +259,7 @@ def _estimate_roi(payload: RoiEstimateRequest) -> RoiEstimateResponse:
     projected_monthly_cost_usd = projected_monthly_engineering_hours * payload.hourly_engineering_cost_usd
 
     monthly_engineering_hours_saved = max(0.0, baseline_monthly_engineering_hours - projected_monthly_engineering_hours)
+    monthly_incidents_prevented = max(0.0, payload.incidents_per_month - projected_incidents_per_month)
     monthly_cost_saved_usd = max(0.0, baseline_monthly_cost_usd - projected_monthly_cost_usd)
 
     monthly_cost_savings_percent = (
@@ -271,6 +272,8 @@ def _estimate_roi(payload: RoiEstimateRequest) -> RoiEstimateResponse:
         projected_monthly_engineering_hours=_round2(projected_monthly_engineering_hours),
         projected_monthly_cost_usd=_round2(projected_monthly_cost_usd),
         monthly_engineering_hours_saved=_round2(monthly_engineering_hours_saved),
+        annual_engineering_hours_saved=_round2(monthly_engineering_hours_saved * 12),
+        monthly_incidents_prevented=_round2(monthly_incidents_prevented),
         monthly_cost_saved_usd=_round2(monthly_cost_saved_usd),
         annual_cost_saved_usd=_round2(monthly_cost_saved_usd * 12),
         monthly_cost_savings_percent=_round2(monthly_cost_savings_percent),

@@ -25,6 +25,8 @@ def test_roi_estimate_returns_projected_savings():
     assert body["projected_monthly_engineering_hours"] == 59.2
     assert body["projected_monthly_cost_usd"] == 5920.0
     assert body["monthly_engineering_hours_saved"] == 60.8
+    assert body["annual_engineering_hours_saved"] == 729.6
+    assert body["monthly_incidents_prevented"] == 2.0
     assert body["monthly_cost_saved_usd"] == 6080.0
     assert body["annual_cost_saved_usd"] == 72960.0
     assert body["monthly_cost_savings_percent"] == 50.67
@@ -45,6 +47,8 @@ def test_roi_estimate_zero_adoption_means_no_savings():
 
     assert res.status_code == 200
     body = res.json()
+    assert body["monthly_incidents_prevented"] == 0.0
+    assert body["annual_engineering_hours_saved"] == 0.0
     assert body["monthly_cost_saved_usd"] == 0.0
     assert body["annual_cost_saved_usd"] == 0.0
     assert body["monthly_cost_savings_percent"] == 0.0

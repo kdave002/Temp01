@@ -121,6 +121,8 @@ class RoiEstimateResponse(BaseModel):
     projected_monthly_engineering_hours: float = Field(ge=0.0)
     projected_monthly_cost_usd: float = Field(ge=0.0)
     monthly_engineering_hours_saved: float = Field(ge=0.0)
+    annual_engineering_hours_saved: float = Field(ge=0.0)
+    monthly_incidents_prevented: float = Field(ge=0.0)
     monthly_cost_saved_usd: float = Field(ge=0.0)
     annual_cost_saved_usd: float = Field(ge=0.0)
     monthly_cost_savings_percent: float = Field(ge=0.0, le=100.0)
