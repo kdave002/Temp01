@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from backend.app.main import app, _rate_limit_buckets
+from backend.app.main import app, _cleanup_rate_limit_buckets, _rate_limit_buckets
 
 
 client = TestClient(app)
@@ -42,3 +42,14 @@ def test_get_health_not_rate_limited(monkeypatch):
     for _ in range(3):
         res = client.get("/health")
         assert res.status_code == 200
+
+
+def test_cleanup_rate_limit_buckets_removes_stale_entries():
+    _rate_limit_buckets.clear()
+    _rate_limit_buckets[("/analyze", "active-client")].append(100.0)
+    _rate_limit_buckets[("/simulate", "stale-client")].append(1.0)
+
+    _cleanup_rate_limit_buckets(now=200.0, window_seconds=60)
+
+    assert ("/analyze", "active-client") in _rate_limit_buckets
+    assert ("/simulate", "stale-client") not in _rate_limit_buckets

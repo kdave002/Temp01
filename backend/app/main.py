@@ -30,7 +30,22 @@ app = FastAPI(title="DriftShield API", version="0.7.0")
 logger = logging.getLogger("driftshield.audit")
 
 _RATE_LIMITED_PATHS = {"/analyze", "/simulate", "/pr-preview", "/pr-create"}
+_RATE_LIMIT_STALE_FACTOR = 3
 _rate_limit_buckets: dict[tuple[str, str], deque[float]] = defaultdict(deque)
+
+
+def _cleanup_rate_limit_buckets(now: float, window_seconds: int) -> None:
+    if not _rate_limit_buckets:
+        return
+
+    stale_before = now - (window_seconds * _RATE_LIMIT_STALE_FACTOR)
+    stale_keys = [
+        key
+        for key, bucket in _rate_limit_buckets.items()
+        if not bucket or bucket[-1] <= stale_before
+    ]
+    for key in stale_keys:
+        _rate_limit_buckets.pop(key, None)
 
 
 def _request_id_from(request: Request) -> str:
@@ -56,12 +71,18 @@ def _enforce_rate_limit(request: Request, settings: Settings) -> None:
         return
 
     now = time.monotonic()
+    _cleanup_rate_limit_buckets(now, window_seconds)
+
     bucket_key = (request.url.path, _client_fingerprint(request))
     bucket = _rate_limit_buckets[bucket_key]
     window_start = now - window_seconds
 
     while bucket and bucket[0] <= window_start:
         bucket.popleft()
+
+    if not bucket:
+        _rate_limit_buckets.pop(bucket_key, None)
+        bucket = _rate_limit_buckets[bucket_key]
 
     if len(bucket) >= max_requests:
         raise HTTPException(status_code=429, detail="rate limit exceeded")
