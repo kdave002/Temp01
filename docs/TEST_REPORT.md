@@ -20,3 +20,4 @@
 - 2026-03-02T05:23:00Z: Added rate-limit regression assertion for `Retry-After` header on 429 responses; full suite run via `.venv/bin/python -m pytest -q` passed (53/53). [UTC DONE]
 - 2026-03-02T05:44:00Z: Added `/simulate` response contract regression coverage for new `confidence_score` (`0..1`) field; full suite run via `.venv/bin/python -m pytest -q` passed (53/53). [UTC DONE]
 - 2026-03-02T05:54:31Z: Added `/roi-estimate` regression coverage for new business-impact outputs (`monthly_incidents_prevented`, `annual_engineering_hours_saved`); full suite run via `.venv/bin/python -m pytest -q` passed (53/53). [UTC DONE]
+- 2026-03-03T17:31:00Z: Added schema-aware patch generation regression tests for rename projection (`old AS new`) and type-change casting (`SAFE_CAST` to BigQuery type); full suite + compile checks passed (`pytest -q`: 55/55, `make check`: pass). [UTC DONE]
