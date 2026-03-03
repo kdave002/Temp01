@@ -1,4 +1,4 @@
-from backend.app.drift import detect_drift, compute_impact
+from backend.app.drift import build_patch, compute_impact, detect_drift
 from backend.app.models import Column
 
 
@@ -33,3 +33,24 @@ def test_impact_score_high_when_many_breaking_events():
     score, risk = compute_impact(events, downstream_model_count=10)
     assert score >= 70
     assert risk == "high"
+
+
+def test_build_patch_infers_rename_projection():
+    prev = [Column(name="customer_id", type="string")]
+    curr = [Column(name="client_id", type="string")]
+
+    events = detect_drift(prev, curr)
+    patch = build_patch(events, prev, curr)
+
+    assert "customer_id AS client_id" in patch
+    assert "select * from patched" in patch
+
+
+def test_build_patch_adds_safe_cast_for_type_changes():
+    prev = [Column(name="amount", type="int")]
+    curr = [Column(name="amount", type="float")]
+
+    events = detect_drift(prev, curr)
+    patch = build_patch(events, prev, curr)
+
+    assert "SAFE_CAST(amount AS FLOAT64) AS amount" in patch

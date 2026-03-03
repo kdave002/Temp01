@@ -187,7 +187,7 @@ def http_exception_handler(request: Request, exc: HTTPException):
 def _run_analysis(payload: DriftRequest) -> DriftResponse:
     events = detect_drift(payload.previous_schema, payload.current_schema)
     impact_score, risk = compute_impact(events, payload.downstream_model_count)
-    patch = build_patch(events)
+    patch = build_patch(events, payload.previous_schema, payload.current_schema)
     validation = validate_patch(events)
     pr_body = build_pr_body(events, impact_score, risk, patch, validation)
     action, reasons = recommend_action(risk, validation, impact_score, events)
